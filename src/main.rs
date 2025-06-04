@@ -13,11 +13,7 @@ struct Cli {
 #[derive(Subcommand, Debug)]
 enum Commands {
     /// Setup DDNS
-    Setup {
-        /// User that runs the job
-        #[arg(short, long)]
-        user: String,
-    },
+    Setup {},
 
     /// Check and update DNS Records
     Update {},
@@ -27,19 +23,28 @@ fn main() {
     let cli = Cli::parse();
 
     match &cli.command {
-        Some(Commands::Setup { user }) => {
+        Some(Commands::Setup {}) => {
             println!("📦 setting up...");
-            let cron = "* * * * * echo foo > /home/luca/src/ddns-route53/foo.txt";
+            let mut service =
+                File::open("ddns.service").expect("Could not find file: ddns.service");
+            let mut timer = File::open("ddns.timer").expect("Could not find file: ddns.timer");
+            let mut service_buf = Vec::new();
+            let mut timer_buf = Vec::new();
+            let _ = service.read_to_end(&mut service_buf);
+            let _ = timer.read_to_end(&mut timer_buf);
 
-            users::get_user_by_name(&user).expect("User does not exist");
-
-            let path = PathBuf::from(format!("/var/spool/crontabs/{}", user));
+            let path = PathBuf::from("/etc/systemd/system");
             let _ = fs::create_dir_all(&path).unwrap();
 
-            let mut file = File::create(path.join("ddns-route53-cron")).unwrap();
-            match file.write(cron.as_bytes()) {
-                Ok(b) => println!("Wrote {} bytes to ddns-route53-cron", b),
-                Err(e) => eprintln!("Failed to write cron: {}", e),
+            let mut service_file = File::create(path.join("ddns.service")).unwrap();
+            match service_file.write(&service_buf) {
+                Ok(b) => println!("Wrote {} bytes to ddns.service", b),
+                Err(e) => eprintln!("Failed to write ddns.service: {}", e),
+            }
+            let mut timer_file = File::create(path.join("ddns.timer")).unwrap();
+            match timer_file.write(&timer_buf) {
+                Ok(b) => println!("Wrote {} bytes to ddns.timer", b),
+                Err(e) => eprintln!("Failed to write ddns.timer: {}", e),
             }
         }
         Some(Commands::Update {}) => {}
