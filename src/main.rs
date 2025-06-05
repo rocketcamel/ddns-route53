@@ -2,7 +2,9 @@ mod styles;
 
 use anyhow::Context;
 use clap::{CommandFactory, Parser, Subcommand};
-use log::info;
+use env_logger::Env;
+use env_logger::fmt::Formatter;
+use log::{Level, LevelFilter, info};
 use std::fs::{self, File};
 use std::io::{Read, Write};
 use std::path::PathBuf;
@@ -26,7 +28,11 @@ enum Commands {
 
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
-    env_logger::init();
+    env_logger::builder()
+        .format_timestamp(None)
+        .parse_default_env()
+        .filter_level(LevelFilter::Info)
+        .init();
 
     match &cli.command {
         Some(Commands::Setup {}) => {
