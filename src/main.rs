@@ -26,6 +26,7 @@ enum Commands {
 
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
+    env_logger::init();
 
     match &cli.command {
         Some(Commands::Setup {}) => {
