@@ -1,13 +1,14 @@
+mod assets;
 mod styles;
 
 use anyhow::Context;
 use clap::{CommandFactory, Parser, Subcommand};
-use env_logger::Env;
-use env_logger::fmt::Formatter;
-use log::{Level, LevelFilter, info};
+use log::{LevelFilter, info};
 use std::fs::{self, File};
-use std::io::{Read, Write};
+use std::io::Write;
 use std::path::PathBuf;
+
+use crate::assets::Asset;
 
 #[derive(Parser, Debug)]
 #[command(version = "0.1.0", about = "Setup DDNS with route53", long_about = None)]
@@ -37,25 +38,20 @@ fn main() -> anyhow::Result<()> {
     match &cli.command {
         Some(Commands::Setup {}) => {
             println!("📦 setting up...");
-            let mut service =
-                File::open("ddns.service").context("Could not find file: ddns.service")?;
-            let mut timer = File::open("ddns.timer").context("Could not find file: ddns.timer")?;
-            let mut service_buf = Vec::new();
-            let mut timer_buf = Vec::new();
-            service.read_to_end(&mut service_buf)?;
-            timer.read_to_end(&mut timer_buf)?;
+            let service = Asset::get("ddns.service").context("Failed to find ddns.service")?;
+            let timer = Asset::get("ddns.timer").context("Failed to find ddns.timer")?;
 
             let path = PathBuf::from("/etc/systemd/system");
             fs::create_dir_all(&path)?;
 
             let mut service_file = File::create(path.join("ddns.service"))?;
             let bytes = service_file
-                .write(&service_buf)
+                .write(&service.data)
                 .context("Failed to write ddns.service")?;
             info!("Wrote {} bytes to ddns.service", bytes);
 
             let mut timer_file = File::create(path.join("ddns.timer"))?;
-            let bytes = timer_file.write(&timer_buf)?;
+            let bytes = timer_file.write(&timer.data)?;
             info!("Wrote {} bytes to ddns.timer", bytes);
             Ok(())
         }
