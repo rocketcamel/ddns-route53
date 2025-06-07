@@ -1,48 +1,38 @@
-use clap::{CommandFactory, Parser, Subcommand};
-use std::fs::{self, File};
-use std::io::{Read, Write};
-use std::path::{Path, PathBuf};
+mod assets;
+mod commands;
+mod config;
+mod styles;
+
+use anyhow::Context;
+use clap::{CommandFactory, Parser};
+use log::LevelFilter;
+
+use crate::commands::Commands;
 
 #[derive(Parser, Debug)]
 #[command(version = "0.1.0", about = "Setup DDNS with route53", long_about = None)]
+#[command(styles = styles::get_styles())]
 struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,
 }
 
-#[derive(Subcommand, Debug)]
-enum Commands {
-    /// Setup DDNS
-    Setup {
-        /// User that runs the job
-        #[arg(short, long)]
-        user: String,
-    },
-
-    /// Check and update DNS Records
-    Update {},
-}
-
-fn main() {
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
+    env_logger::builder()
+        .format_timestamp(None)
+        .parse_default_env()
+        .filter_level(LevelFilter::Info)
+        .init();
 
     match &cli.command {
-        Some(Commands::Setup { user }) => {
-            println!("📦 setting up...");
-            let cron = "* * * * * echo foo > /home/luca/src/ddns-route53/foo.txt";
-
-            users::get_user_by_name(&user).expect("User does not exist");
-
-            let path = PathBuf::from(format!("/var/spool/crontabs/{}", user));
-            let _ = fs::create_dir_all(&path).unwrap();
-
-            let mut file = File::create(path.join("ddns-route53-cron")).unwrap();
-            match file.write(cron.as_bytes()) {
-                Ok(b) => println!("Wrote {} bytes to ddns-route53-cron", b),
-                Err(e) => eprintln!("Failed to write cron: {}", e),
-            }
-        }
-        Some(Commands::Update {}) => {}
-        None => Cli::command().print_long_help().unwrap(),
+        Some(Commands::Setup(cmd)) => cmd.run()?,
+        Some(Commands::Update(cmd)) => cmd.run().await?,
+        None => Cli::command()
+            .print_long_help()
+            .context("Failed to print help message")?,
     }
+
+    Ok(())
 }

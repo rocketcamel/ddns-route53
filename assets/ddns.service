@@ -1,0 +1,6 @@
+[Unit]
+Description=DDNS Route53 Service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/env ddns-route53 update

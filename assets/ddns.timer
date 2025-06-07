@@ -1,0 +1,11 @@
+[Unit]
+Description=DDNS Route53 Timer
+
+[Timer]
+OnCalendar=*:0/10
+Persistent=true
+Unit = ddns.service
+
+[Install]
+WantedBy=timers.target
+
