@@ -5,8 +5,16 @@ edition = "2024"
 
 [dependencies]
 anyhow = "1.0.98"
+aws-config = "1.6.3"
+aws-sdk-route53 = "1.80.0"
 clap = { version = "4.5.39", features = ["derive"] }
 env_logger = "0.11.8"
+inquire = "0.7.5"
 log = "0.4.27"
+reqwest = "0.12.19"
 rust-embed = "8.7.2"
+serde = { version = "1.0.219", features = ["derive"] }
+tokio = { version = "1.45.1", features = ["full"] }
+toml = "0.8.23"
 users = "0.11.0"
+xdg = "3.0.0"
