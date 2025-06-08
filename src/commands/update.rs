@@ -49,7 +49,7 @@ impl UpdateCommand {
             .await
             .context("Error occurred changing record sets")?;
 
-        info!("Response: {:?}", response.change_info().unwrap());
+        info!("Updated Records: {:?}", response.change_info().unwrap());
 
         Ok(())
     }

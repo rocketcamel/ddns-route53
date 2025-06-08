@@ -16,5 +16,4 @@ rust-embed = "8.7.2"
 serde = { version = "1.0.219", features = ["derive"] }
 tokio = { version = "1.45.1", features = ["full"] }
 toml = "0.8.23"
-users = "0.11.0"
 xdg = "3.0.0"

@@ -5,9 +5,9 @@ use std::{
     vec,
 };
 
-use anyhow::Context;
+use anyhow::{Context, bail};
 use clap::Args;
-use inquire::{CustomType, ui::RenderConfig};
+use inquire::{CustomType, ui::RenderConfig, validator::Validation};
 use log::info;
 
 use crate::{assets::Asset, config::Config};
@@ -18,9 +18,21 @@ pub struct SetupCommand;
 impl SetupCommand {
     pub fn run(&self) -> anyhow::Result<()> {
         println!("📦 setting up...");
-        let zone_id = inquire::Text::new("Hosted Zone ID").prompt()?;
+        let required_validator = |input: &str| {
+            if input.is_empty() {
+                Ok(Validation::Invalid("This is a required field.".into()))
+            } else {
+                Ok(Validation::Valid)
+            }
+        };
+
+        let zone_id = inquire::Text::new("Hosted Zone ID")
+            .with_validator(required_validator)
+            .prompt()?;
+
         let record = inquire::Text::new("Subdomain")
             .with_placeholder("home.example.com")
+            .with_validator(required_validator)
             .prompt()?;
 
         let ttl = CustomType {
@@ -47,23 +59,36 @@ impl SetupCommand {
             ttl,
         };
 
-        info!("Creating config.toml");
         let config_path = xdg::BaseDirectories::with_prefix("ddns-route53")
             .place_config_file("config.toml")
             .context("Cannot create config directory")?;
 
-        File::create(&config_path)
+        let bytes = File::create(&config_path)
             .context("Could not create config.toml")?
             .write(toml::to_string(&config)?.as_bytes())
             .context("Could not write config.toml")?;
+        info!("Wrote {} bytes to config.toml", bytes);
 
-        let service = Asset::get("ddns.service").context("Failed to find ddns.service")?;
-        let timer = Asset::get("ddns.timer").context("Failed to find ddns.timer")?;
+        let service = Asset::get("ddns.service").context("Failed to get ddns.service")?;
+        let timer = Asset::get("ddns.timer").context("Failed to get ddns.timer")?;
+
+        match fs::read_to_string("/proc/1/comm") {
+            Ok(contents) => {
+                if contents.trim() != "systemd" {
+                    bail!(
+                        "systemd is required for the setup command to continue, you must write your own timer if systemd is not present."
+                    )
+                }
+            }
+            Err(e) => bail!("Failed to read /proc/1/comm: {}", e),
+        }
 
         let path = PathBuf::from("/etc/systemd/system");
         fs::create_dir_all(&path)?;
 
-        let mut service_file = File::create(path.join("ddns.service"))?;
+        let mut service_file = File::create(path.join("ddns.service")).context(
+            "Could not create systemd service files. You must write your own timer if this does not work",
+        )?;
         let bytes = service_file
             .write(&service.data)
             .context("Failed to write ddns.service")?;
