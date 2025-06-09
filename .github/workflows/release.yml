@@ -39,7 +39,7 @@ jobs:
       - name: Archive
         shell: bash
         run: |
-          mv target/x86_64-unknown-linux-gnu/release/${{ env.BIN_NAME }} ${{ env.BIN_NAME }}
+          mv target/x86_64-unknown-linux-gnu/release/ddns-route53 ddns-route53
           zip -r ${{ env.ARCHIVE_NAME }}.zip ${{ env.BIN_NAME }}
 
       - name: Upload zip artifact
