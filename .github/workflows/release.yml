@@ -1,0 +1,71 @@
+on:
+  push:
+    tags:
+      - "v*"
+
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            host: linux
+            arch: x86_64
+            target: x86_64-unknown-linux-gnu
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Set env
+        shell: bash
+        run: |
+          ARCHIVE_NAME=${{ env.BIN_NAME }}-${{ matrix.host }}-${{ matrix.arch }}
+
+          echo "ARCHIVE_NAME=$ARCHIVE_NAME" >> $GITHUB_ENV
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install pkg-config
+
+      - name: Build
+        run: |
+          cargo build --release --locked
+
+      - name: Archive
+        shell: bash
+        run: |
+          mv target/x86_64-unknown-linux-gnu/release/${{ env.BIN_NAME }} ${{ env.BIN_NAME }}
+          zip -r ${{ env.ARCHIVE_NAME }}.zip ${{ env.BIN_NAME }}
+
+      - name: Upload zip artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARCHIVE_NAME }}.zip
+          path: ${{ env.ARCHIVE_NAME }}.zip
+
+  create_release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+          pattern: "*.zip"
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          tag_name: ${{ github.ref_name }}
+          name: v${{ github.ref_name }}
+          draft: true
+          files: artifacts/*
