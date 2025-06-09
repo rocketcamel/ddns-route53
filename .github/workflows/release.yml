@@ -36,7 +36,7 @@ jobs:
 
       - name: Build
         run: |
-          cargo build --release --locked
+          cargo build --release --target ${{ matrix.target }} --locked
 
       - name: Archive
         shell: bash
