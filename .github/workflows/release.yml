@@ -49,6 +49,7 @@ jobs:
           path: ${{ env.ARCHIVE_NAME }}.zip
 
   create_release:
+    needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: write
