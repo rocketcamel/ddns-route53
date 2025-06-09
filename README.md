@@ -6,7 +6,7 @@ This tool enables automatic DNS record updates when your public IP changes — i
 ## Features
 
 - Automatically detects your current public IP address
-- Updates Route53 DNS A record to point to your current IP
+- Updates a Route53 DNS A record to point to your current IP
 - Simple configuration with the `setup` command
 - Installs a systemd service on supported machines for continuous updates
 
@@ -25,5 +25,3 @@ or using `cargo`
 ```bash
 cargo install --git https://github.com/rocketcamel/ddns-route53.git
 ```
-
-(note this will compile the project on your local machine)

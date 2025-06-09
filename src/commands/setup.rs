@@ -35,7 +35,7 @@ impl SetupCommand {
             .with_validator(required_validator)
             .prompt()?;
 
-        let record = inquire::Text::new("Subdomain")
+        let record = inquire::Text::new("Domain or Subdomain")
             .with_placeholder("home.example.com")
             .with_validator(required_validator)
             .prompt()?;
