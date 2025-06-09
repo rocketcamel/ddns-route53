@@ -3,6 +3,8 @@ on:
     tags:
       - "v*"
 
+env:
+  BIN_NAME: ddns-route53
 
 jobs:
   build:
@@ -65,7 +67,7 @@ jobs:
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
-          token: ${{ secrets.GH_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           tag_name: ${{ github.ref_name }}
           name: v${{ github.ref_name }}
           draft: true
