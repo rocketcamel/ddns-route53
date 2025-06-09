@@ -1,13 +1,18 @@
 use std::{
     fs::{self, File},
-    io::Write,
+    io::{Write, stdout},
     path::PathBuf,
+    process::Command,
     vec,
 };
 
 use anyhow::{Context, bail};
 use clap::Args;
-use inquire::{CustomType, ui::RenderConfig, validator::Validation};
+use crossterm::{
+    QueueableCommand,
+    style::{self, Print, ResetColor, SetForegroundColor},
+};
+use inquire::{Confirm, CustomType, ui::RenderConfig, validator::Validation};
 use log::info;
 
 use crate::{assets::Asset, config::Config};
@@ -97,6 +102,35 @@ impl SetupCommand {
         let mut timer_file = File::create(path.join("ddns.timer"))?;
         let bytes = timer_file.write(&timer.data)?;
         info!("Wrote {} bytes to ddns.timer", bytes);
+        info!(
+            "✅ Setup complete. run systemctl enable --now ddns.timer to enable and start the service"
+        );
+        let enable_service =
+            Confirm::new("Would you like to run these commands automatically?").prompt()?;
+
+        if enable_service {
+            let output = Command::new("systemctl")
+                .args(["enable", "--now", "ddns.timer"])
+                .output()
+                .context("Failed to execute systemctl enable")?;
+
+            let stdout_str = String::from_utf8_lossy(&output.stdout);
+            let stderr_str = String::from_utf8_lossy(&output.stderr);
+
+            let mut stdout = stdout();
+            stdout.queue(SetForegroundColor(style::Color::Green))?;
+            stdout.queue(Print(stdout_str))?;
+            stdout.queue(ResetColor)?;
+
+            if !stderr_str.trim().is_empty() {
+                stdout.queue(SetForegroundColor(style::Color::Red))?;
+                stdout.queue(Print(stderr_str))?;
+                stdout.queue(ResetColor)?;
+            };
+
+            stdout.flush()?
+        }
+
         Ok(())
     }
 }
