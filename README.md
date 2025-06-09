@@ -17,7 +17,7 @@ This tool enables automatic DNS record updates when your public IP changes — i
 
 ## Installation
 
-You can install from the [Latest Release](https://github.com/rocketcamel/ddns-route53/releases/latest
+You can install from the [latest release](https://github.com/rocketcamel/ddns-route53/releases/latest
 )
 
 or using `cargo`
@@ -25,3 +25,13 @@ or using `cargo`
 ```bash
 cargo install --git https://github.com/rocketcamel/ddns-route53.git
 ```
+(you will need pkg-config to do this)
+
+## Usage
+
+This program needs to be run as root to function correctly, since it uses systemd and is ran as the root user in the service. You can create your own timer or cron running at user level if this is not possible.
+
+You need to have the `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_REGION` environment variables set.
+using `aws configure` or setting these manually is sufficient
+
+Running `ddns-route53 setup` will interactively generate a config, and if possible create systemd timers
