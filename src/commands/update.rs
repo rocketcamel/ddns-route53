@@ -15,13 +15,7 @@ pub struct UpdateCommand;
 
 impl UpdateCommand {
     pub async fn run(&self) -> anyhow::Result<()> {
-        let ddns_config_path = xdg::BaseDirectories::with_prefix("ddns-route53")
-            .find_config_file("config.toml")
-            .context("Could not find config.toml")?;
-        let mut ddns_buf = String::new();
-        File::open(&ddns_config_path)?.read_to_string(&mut ddns_buf)?;
-        let ddns_config: Config =
-            toml::from_str(&ddns_buf).context("Failed to parse config.toml")?;
+        let ddns_config = Config::parse().context("Failed to parse config file")?;
 
         let config = aws_config::load_defaults(BehaviorVersion::v2025_01_17()).await;
         let client = aws_sdk_route53::Client::new(&config);

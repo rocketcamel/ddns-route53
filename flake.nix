@@ -8,21 +8,38 @@
   outputs =
     { self, nixpkgs }:
     let
-      system = "x86_64-linux";
-      pkgs = nixpkgs.legacyPackages.${system};
-      binary = pkgs.callPackage ./package.nix { };
+      systems = [ "x86_64-linux" ];
+      forAllSystems =
+        f:
+        nixpkgs.lib.genAttrs systems (
+          system:
+          f {
+            inherit system;
+            pkgs = nixpkgs.legacyPackages.${system};
+          }
+        );
     in
     {
-      packages.${system}.default = binary;
+      packages = forAllSystems (
+        { pkgs, system }:
+        {
+          default = pkgs.callPackage ./package.nix { };
+        }
+      );
 
-      devShells.default = pkgs.mkShell {
-        buildInputs = with pkgs; [
-          openssl
-        ];
+      devShells = forAllSystems (
+        { pkgs, system }:
+        {
+          default = pkgs.mkShell {
+            buildInputs = with pkgs; [
+              openssl
+            ];
 
-        nativeBuildInputs = with pkgs; [
-          pkg-config
-        ];
-      };
+            nativeBuildInputs = with pkgs; [
+              pkgconf
+            ];
+          };
+        }
+      );
     };
 }

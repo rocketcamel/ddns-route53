@@ -64,14 +64,7 @@ impl SetupCommand {
             ttl,
         };
 
-        let config_path = xdg::BaseDirectories::with_prefix("ddns-route53")
-            .place_config_file("config.toml")
-            .context("Cannot create config directory")?;
-
-        let bytes = File::create(&config_path)
-            .context("Could not create config.toml")?
-            .write(toml::to_string(&config)?.as_bytes())
-            .context("Could not write config.toml")?;
+        let bytes = config.write()?;
         info!("Wrote {} bytes to config.toml", bytes);
 
         let service = Asset::get("ddns.service").context("Failed to get ddns.service")?;
