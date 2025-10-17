@@ -64,7 +64,9 @@ impl SetupCommand {
             ttl,
         };
 
-        let bytes = config.write()?;
+        let bytes = config
+            .write()
+            .context("Failed to write config to filesystem")?;
         info!("Wrote {} bytes to config.toml", bytes);
 
         let service = Asset::get("ddns.service").context("Failed to get ddns.service")?;

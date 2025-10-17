@@ -54,6 +54,17 @@ impl TryInto<Vec<u8>> for &Config {
 }
 
 impl Config {
+    pub fn parse() -> anyhow::Result<Self> {
+        let path = xdg::BaseDirectories::with_prefix(CONFIG_NAME)
+            .get_config_file(CONFIG_FILENAME)
+            .context(format!("Failed to get {}", CONFIG_FILENAME))?;
+
+        let config = Config::try_from(&path)
+            .context(format!("Failed to parse toml from {}", CONFIG_FILENAME))?;
+
+        Ok(config)
+    }
+
     pub fn write(&self) -> anyhow::Result<usize> {
         let path = xdg::BaseDirectories::with_prefix(CONFIG_NAME)
             .place_config_file(CONFIG_FILENAME)
@@ -63,16 +74,6 @@ impl Config {
 
         Ok(File::create(&path)?
             .write(&bytes)
-            .context("Failed to write to config.toml")?)
-    }
-
-    pub fn parse() -> anyhow::Result<Self> {
-        let path = xdg::BaseDirectories::with_prefix(CONFIG_NAME)
-            .get_config_file(CONFIG_FILENAME)
-            .context(format!("Failed to get {}", CONFIG_FILENAME))?;
-
-        let config = Config::try_from(&path).context("Failed to parse toml")?;
-
-        Ok(config)
+            .context(format!("Failed to write to {}", CONFIG_FILENAME))?)
     }
 }

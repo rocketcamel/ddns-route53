@@ -1,6 +1,7 @@
 mod assets;
 mod commands;
 mod config;
+mod service;
 mod styles;
 
 use anyhow::Context;
