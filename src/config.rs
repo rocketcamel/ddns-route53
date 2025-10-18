@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize)]
 pub struct Config {
     pub zone_id: String,
-    pub record: String,
+    pub records: Vec<String>,
     pub ttl: i64,
 }
 
@@ -39,7 +39,7 @@ impl TryFrom<&PathBuf> for Config {
     type Error = anyhow::Error;
 
     fn try_from(path: &PathBuf) -> Result<Self, Self::Error> {
-        path.try_into()
+        path.as_path().try_into()
     }
 }
 
@@ -54,14 +54,6 @@ impl TryInto<Vec<u8>> for &Config {
 }
 
 impl Config {
-    pub fn new(zone_id: String, record: String) -> Self {
-        Self {
-            zone_id,
-            record: record,
-            ttl: 300,
-        }
-    }
-
     pub fn parse() -> anyhow::Result<Self> {
         let path = xdg::BaseDirectories::with_prefix(CONFIG_NAME)
             .get_config_file(CONFIG_FILENAME)

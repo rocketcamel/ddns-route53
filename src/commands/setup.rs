@@ -18,6 +18,7 @@ use log::{info, warn};
 use crate::{
     assets::Asset,
     config::Config,
+    prompt,
     service::{self, ServiceError},
 };
 
@@ -27,44 +28,14 @@ pub struct SetupCommand;
 impl SetupCommand {
     pub fn run(&self) -> anyhow::Result<()> {
         println!("📦 setting up...");
-        let required_validator = |input: &str| {
-            if input.is_empty() {
-                Ok(Validation::Invalid("This is a required field.".into()))
-            } else {
-                Ok(Validation::Valid)
-            }
-        };
 
-        let zone_id = inquire::Text::new("Hosted Zone ID")
-            .with_validator(required_validator)
-            .prompt()?;
-
-        let record = inquire::Text::new("Domain or Subdomain")
-            .with_placeholder("home.example.com")
-            .with_validator(required_validator)
-            .prompt()?;
-
-        let ttl = CustomType {
-            message: "TTL",
-            starting_input: None,
-            default: Some(300),
-            validators: vec![],
-            placeholder: None,
-            help_message: None,
-            formatter: &|i| format!("TTL: {}", i),
-            default_value_formatter: &|i| format!("TTL: {}", i),
-            error_message: "Please enter a valid number".to_owned(),
-            parser: &|i| match i.parse::<i64>() {
-                Ok(val) => Ok(val),
-                Err(_) => Err(()),
-            },
-            render_config: RenderConfig::default_colored(),
-        }
-        .prompt()?;
+        let zone_id = prompt::hosted_zone_id()?;
+        let records = prompt::record_set()?;
+        let ttl = prompt::ttl()?;
 
         let config = Config {
             zone_id,
-            record,
+            records: records,
             ttl,
         };
 

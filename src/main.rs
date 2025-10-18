@@ -1,6 +1,7 @@
 mod assets;
 mod commands;
 mod config;
+mod prompt;
 mod service;
 mod styles;
 
@@ -30,6 +31,8 @@ async fn main() -> anyhow::Result<()> {
     match &cli.command {
         Some(Commands::Setup(cmd)) => cmd.run()?,
         Some(Commands::Update(cmd)) => cmd.run().await?,
+        Some(Commands::Add(cmd)) => cmd.run()?,
+        Some(Commands::Remove(cmd)) => cmd.run()?,
         None => Cli::command()
             .print_long_help()
             .context("Failed to print help message")?,

@@ -23,17 +23,24 @@ impl UpdateCommand {
         let ip = reqwest::get("https://ifconfig.me/ip").await?.text().await?;
         info!("IP: {}", ip);
 
-        let record = ResourceRecordSet::builder()
-            .name(format!("{}.", ddns_config.record))
-            .r#type(RrType::A)
-            .ttl(ddns_config.ttl)
-            .resource_records(ResourceRecord::builder().value(&ip).build()?)
-            .build()?;
-        let change = Change::builder()
-            .resource_record_set(record)
-            .action(ChangeAction::Upsert)
-            .build()?;
-        let changes = ChangeBatch::builder().changes(change).build()?;
+        let changes = ddns_config
+            .records
+            .iter()
+            .map(|record| {
+                let record_set = ResourceRecordSet::builder()
+                    .name(format!("{}.", record))
+                    .r#type(RrType::A)
+                    .ttl(ddns_config.ttl)
+                    .resource_records(ResourceRecord::builder().value(&ip).build()?)
+                    .build()?;
+                Change::builder()
+                    .resource_record_set(record_set)
+                    .action(ChangeAction::Upsert)
+                    .build()
+            })
+            .collect::<anyhow::Result<Vec<_>, _>>()?;
+
+        let changes = ChangeBatch::builder().set_changes(Some(changes)).build()?;
 
         let response = client
             .change_resource_record_sets()
