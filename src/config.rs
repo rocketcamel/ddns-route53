@@ -54,6 +54,14 @@ impl TryInto<Vec<u8>> for &Config {
 }
 
 impl Config {
+    pub fn new(zone_id: String, record: String) -> Self {
+        Self {
+            zone_id,
+            record: record,
+            ttl: 300,
+        }
+    }
+
     pub fn parse() -> anyhow::Result<Self> {
         let path = xdg::BaseDirectories::with_prefix(CONFIG_NAME)
             .get_config_file(CONFIG_FILENAME)

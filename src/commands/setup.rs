@@ -13,9 +13,13 @@ use crossterm::{
     style::{self, Print, ResetColor, SetForegroundColor},
 };
 use inquire::{Confirm, CustomType, ui::RenderConfig, validator::Validation};
-use log::info;
+use log::{info, warn};
 
-use crate::{assets::Asset, config::Config};
+use crate::{
+    assets::Asset,
+    config::Config,
+    service::{self, ServiceError},
+};
 
 #[derive(Debug, Args)]
 pub struct SetupCommand;
@@ -69,37 +73,48 @@ impl SetupCommand {
             .context("Failed to write config to filesystem")?;
         info!("Wrote {} bytes to config.toml", bytes);
 
-        let service = Asset::get("ddns.service").context("Failed to get ddns.service")?;
-        let timer = Asset::get("ddns.timer").context("Failed to get ddns.timer")?;
+        let service_file = Asset::get("ddns.service").context("Failed to get ddns.service")?;
+        let timer_file = Asset::get("ddns.timer").context("Failed to get ddns.timer")?;
 
-        match fs::read_to_string("/proc/1/comm") {
-            Ok(contents) => {
-                if contents.trim() != "systemd" {
-                    bail!(
-                        "systemd is required for the setup command to continue, you must write your own timer if systemd is not present."
-                    )
-                }
+        let results = vec![
+            service::write(&service_file.data, "ddns.service"),
+            service::write(&timer_file.data, "ddns.timer"),
+        ];
+
+        let should_enable_service = !results.iter().all(|r| {
+            if let Err(e) = r {
+                e.chain().any(|err| {
+                    err.downcast_ref::<ServiceError>()
+                        .map(|se| {
+                            matches!(
+                                se,
+                                ServiceError::SystemdNotFound | ServiceError::FileWrite(_)
+                            )
+                        })
+                        .unwrap_or(false)
+                })
+            } else {
+                false
             }
-            Err(e) => bail!("Failed to read /proc/1/comm: {}", e),
+        });
+
+        for result in results.iter() {
+            if let Some(err) = result.as_ref().err() {
+                warn!("{:#}", err)
+            }
         }
 
-        let path = PathBuf::from("/etc/systemd/system");
-        fs::create_dir_all(&path)?;
+        if !should_enable_service {
+            info!(
+                "systemd is required for the setup command to continue. you must create your own timers that run the \"update\" command"
+            );
+            return Ok(());
+        }
 
-        let mut service_file = File::create(path.join("ddns.service")).context(
-            "Could not create systemd service files. You must write your own timer if this does not work",
-        )?;
-        let bytes = service_file
-            .write(&service.data)
-            .context("Failed to write ddns.service")?;
-        info!("Wrote {} bytes to ddns.service", bytes);
-
-        let mut timer_file = File::create(path.join("ddns.timer"))?;
-        let bytes = timer_file.write(&timer.data)?;
-        info!("Wrote {} bytes to ddns.timer", bytes);
         info!(
             "✅ Setup complete. run systemctl enable --now ddns.timer to enable and start the service"
         );
+
         let enable_service =
             Confirm::new("Would you like to run these commands automatically?").prompt()?;
 

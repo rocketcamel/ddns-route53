@@ -37,6 +37,7 @@
 
             nativeBuildInputs = with pkgs; [
               pkgconf
+              rustup
             ];
           };
         }
