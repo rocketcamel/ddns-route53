@@ -6,7 +6,7 @@
 
 rustPlatform.buildRustPackage {
   pname = "ddns-route53";
-  version = "0.1.0";
+  version = "0.2.0";
 
   src = ./.;
 
@@ -15,7 +15,7 @@ rustPlatform.buildRustPackage {
   ];
 
   nativeBuildInputs = with pkgs; [
-    pkg-config
+    pkgconf
   ];
 
   cargoLock = {

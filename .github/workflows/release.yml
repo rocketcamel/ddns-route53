@@ -15,12 +15,18 @@ jobs:
             host: linux
             arch: x86_64
             target: x86_64-unknown-linux-gnu
+          - os: ubuntu-latest
+            host: linux
+            arch: aarch64
+            target: aarch64-unknown-linux-gnu
 
     runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
 
       - name: Set env
         shell: bash
@@ -29,10 +35,22 @@ jobs:
 
           echo "ARCHIVE_NAME=$ARCHIVE_NAME" >> $GITHUB_ENV
 
-      - name: Install dependencies
+      - name: Install dependencies (Linux)
+        if: matrix.host == 'linux'
         run: |
           sudo apt-get update
-          sudo apt-get install pkg-config
+          sudo apt-get install pkg-config openssl
+          
+      - name: Install cross-compilation tools (aarch64-linux)
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get install gcc-aarch64-linux-gnu
+          
+      - name: Configure cross-compilation (aarch64-linux)
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          echo '[target.aarch64-unknown-linux-gnu]' >> ~/.cargo/config.toml
+          echo 'linker = "aarch64-linux-gnu-gcc"' >> ~/.cargo/config.toml
 
       - name: Build
         run: |
