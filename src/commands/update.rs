@@ -1,5 +1,3 @@
-use std::{fs::File, io::Read};
-
 use anyhow::Context;
 use aws_config::BehaviorVersion;
 use aws_sdk_route53::types::{

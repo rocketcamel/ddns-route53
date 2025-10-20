@@ -1,18 +1,16 @@
 use std::{
-    fs::{self, File},
     io::{Write, stdout},
-    path::PathBuf,
     process::Command,
     vec,
 };
 
-use anyhow::{Context, bail};
+use anyhow::Context;
 use clap::Args;
 use crossterm::{
     QueueableCommand,
     style::{self, Print, ResetColor, SetForegroundColor},
 };
-use inquire::{Confirm, CustomType, ui::RenderConfig, validator::Validation};
+use inquire::Confirm;
 use log::{info, warn};
 
 use crate::{
