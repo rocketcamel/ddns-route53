@@ -2,7 +2,6 @@ on:
   push:
     tags:
       - "v*"
-  workflow_dispatch:
 
 env:
   BIN_NAME: ddns-route53
@@ -16,7 +15,7 @@ jobs:
             host: linux
             arch: x86_64
             target: x86_64-unknown-linux-gnu
-          - os: ubuntu-latest
+          - os: ubuntu-22.04-arm
             host: linux
             arch: aarch64
             target: aarch64-unknown-linux-gnu
@@ -46,21 +45,11 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install pkgconf openssl-dev
+          sudo apt-get install pkgconf
 
-      - name: Install cross (aarch64)
-        if: matrix.arch == 'aarch64'
-        run: cargo install cross
-
-      - name: Build (x86_64)
-        if: matrix.arch == 'x86_64'
+      - name: Build
         run: |
           cargo build --release --target ${{ matrix.target }} --locked
-
-      - name: Build (aarch64)
-        if: matrix.arch == 'aarch64'
-        run: |
-          cross build --release --target ${{ matrix.target }} --locked
 
       - name: Archive
         shell: bash
