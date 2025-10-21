@@ -2,6 +2,7 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
 
 env:
   BIN_NAME: ddns-route53
@@ -28,17 +29,36 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
+      - name: Get package version
+        id: version
+        uses: SebRollen/toml-action@v1.0.2
+        with:
+          file: 'Cargo.toml'
+          field: 'package.version'
+
       - name: Set env
         shell: bash
         run: |
-          ARCHIVE_NAME=${{ env.BIN_NAME }}-${{ matrix.host }}-${{ matrix.arch }}
+          ARCHIVE_NAME=${{ env.BIN_NAME }}-${{ steps.version.outputs.value }}-${{ matrix.host }}-${{ matrix.arch }}
 
           echo "ARCHIVE_NAME=$ARCHIVE_NAME" >> $GITHUB_ENV
 
-      - name: Install cross
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install pkgconf openssl-dev
+
+      - name: Install cross (aarch64)
+        if: matrix.arch == 'aarch64'
         run: cargo install cross
 
-      - name: Build
+      - name: Build (x86_64)
+        if: matrix.arch == 'x86_64'
+        run: |
+          cargo build --release --target ${{ matrix.target }} --locked
+
+      - name: Build (aarch64)
+        if: matrix.arch == 'aarch64'
         run: |
           cross build --release --target ${{ matrix.target }} --locked
 
