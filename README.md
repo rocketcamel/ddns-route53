@@ -6,7 +6,7 @@ This tool enables automatic DNS record updates when your public IP changes — i
 ## Features
 
 - Automatically detects your current public IP address
-- Updates a Route53 DNS A record to point to your current IP
+- Updates Route53 DNS A record(s) to point to your current IP
 - Simple configuration with the `setup` command
 - Installs a systemd service on supported machines for continuous updates
 
@@ -25,7 +25,6 @@ or using `cargo`
 ```bash
 cargo install --git https://github.com/rocketcamel/ddns-route53.git
 ```
-(you will need pkg-config to do this)
 
 ## Usage
 > [!WARNING]
@@ -36,3 +35,6 @@ using `aws configure` or setting these manually is sufficient
 
 - `ddns-route53 setup` will interactively generate a config, and if possible create systemd timers.
 - `ddns-route53 update` will get your current IP, and update the configured record
+- `ddns-route53 add` adds a new A record to point to your public IP address
+- `ddns-route53 remove` removes record(s) from the configuration (optionally remove from route53)
+- `ddns-route53 list` list configured records that will be updated

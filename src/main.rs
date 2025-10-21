@@ -2,6 +2,7 @@ mod assets;
 mod commands;
 mod config;
 mod prompt;
+mod records;
 mod service;
 mod styles;
 
@@ -32,7 +33,7 @@ async fn main() -> anyhow::Result<()> {
         Some(Commands::Setup(cmd)) => cmd.run()?,
         Some(Commands::Update(cmd)) => cmd.run().await?,
         Some(Commands::Add(cmd)) => cmd.run()?,
-        Some(Commands::Remove(cmd)) => cmd.run()?,
+        Some(Commands::Remove(cmd)) => cmd.run().await?,
         Some(Commands::List(cmd)) => cmd.run()?,
         None => Cli::command()
             .print_long_help()
